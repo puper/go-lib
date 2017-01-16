@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/puper/go-lib/listener"
+	"github.com/puper/go-lib/server/listener"
 )
 
 const (
