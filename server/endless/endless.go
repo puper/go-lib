@@ -49,7 +49,7 @@ func init() {
 	}
 }
 
-type endlessServer struct {
+type EndlessServer struct {
 	http.Server
 	EndlessListener  net.Listener
 	tlsInnerListener *endlessListener
@@ -59,8 +59,8 @@ type endlessServer struct {
 	lock             *sync.RWMutex
 }
 
-func NewServer(addr string, handler http.Handler) (srv *endlessServer) {
-	srv = &endlessServer{
+func NewServer(addr string, handler http.Handler) (srv *EndlessServer) {
+	srv = &EndlessServer{
 		wg:      sync.WaitGroup{},
 		sigChan: make(chan os.Signal),
 		state:   STATE_INIT,
@@ -85,21 +85,21 @@ func ListenAndServeTLS(addr string, certFile string, keyFile string, handler htt
 	return server.ListenAndServeTLS(certFile, keyFile)
 }
 
-func (srv *endlessServer) getState() uint8 {
+func (srv *EndlessServer) getState() uint8 {
 	srv.lock.RLock()
 	defer srv.lock.RUnlock()
 
 	return srv.state
 }
 
-func (srv *endlessServer) setState(st uint8) {
+func (srv *EndlessServer) setState(st uint8) {
 	srv.lock.Lock()
 	defer srv.lock.Unlock()
 
 	srv.state = st
 }
 
-func (srv *endlessServer) Serve() (err error) {
+func (srv *EndlessServer) Serve() (err error) {
 	defer log.Println(syscall.Getpid(), "Serve() returning...")
 	srv.setState(STATE_RUNNING)
 	err = srv.Server.Serve(srv.EndlessListener)
@@ -109,7 +109,7 @@ func (srv *endlessServer) Serve() (err error) {
 	return
 }
 
-func (srv *endlessServer) ListenAndServe() (err error) {
+func (srv *EndlessServer) ListenAndServe() (err error) {
 	addr := srv.Addr
 	if addr == "" {
 		addr = ":http"
@@ -128,7 +128,7 @@ func (srv *endlessServer) ListenAndServe() (err error) {
 	return srv.Serve()
 }
 
-func (srv *endlessServer) ListenAndServeTLS(certFile, keyFile string) (err error) {
+func (srv *EndlessServer) ListenAndServeTLS(certFile, keyFile string) (err error) {
 	addr := srv.Addr
 	if addr == "" {
 		addr = ":https"
@@ -163,11 +163,11 @@ func (srv *endlessServer) ListenAndServeTLS(certFile, keyFile string) (err error
 	return srv.Serve()
 }
 
-func (srv *endlessServer) getListener(laddr string) (l net.Listener, err error) {
+func (srv *EndlessServer) getListener(laddr string) (l net.Listener, err error) {
 	return listener.GetListener(laddr)
 }
 
-func (srv *endlessServer) handleSignals() {
+func (srv *EndlessServer) handleSignals() {
 	var sig os.Signal
 
 	signal.Notify(
@@ -191,7 +191,7 @@ func (srv *endlessServer) handleSignals() {
 	}
 }
 
-func (srv *endlessServer) shutdown() {
+func (srv *EndlessServer) shutdown() {
 	if srv.getState() != STATE_RUNNING {
 		return
 	}
@@ -209,7 +209,7 @@ func (srv *endlessServer) shutdown() {
 	}
 }
 
-func (srv *endlessServer) hammerTime(d time.Duration) {
+func (srv *EndlessServer) hammerTime(d time.Duration) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("WaitGroup at 0", r)
@@ -232,7 +232,7 @@ func (srv *endlessServer) hammerTime(d time.Duration) {
 type endlessListener struct {
 	net.Listener
 	stopped bool
-	server  *endlessServer
+	server  *EndlessServer
 }
 
 func (el *endlessListener) Accept() (c net.Conn, err error) {
@@ -253,7 +253,7 @@ func (el *endlessListener) Accept() (c net.Conn, err error) {
 	return
 }
 
-func newEndlessListener(l net.Listener, srv *endlessServer) (el *endlessListener) {
+func newEndlessListener(l net.Listener, srv *EndlessServer) (el *endlessListener) {
 	el = &endlessListener{
 		Listener: l,
 		server:   srv,
@@ -273,7 +273,7 @@ func (el *endlessListener) Close() error {
 
 type endlessConn struct {
 	net.Conn
-	server *endlessServer
+	server *EndlessServer
 }
 
 func (w endlessConn) Close() error {
